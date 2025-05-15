@@ -1,0 +1,12 @@
+#!/bin/bash
+
+br=$(git status | sed -n "s/Your branch is up to date with '\(.*\)'./\1/p")
+#[ -z "$br" ] && echo "On detached branch" && exit
+echo "Remote branch: $br"
+[ "$br" == "origin/master" ] && exit
+
+git clean -fxd
+echo "Pushing:"
+git status -s
+git add . && git commit -m"Cleanup" && git push
+ctags -R
