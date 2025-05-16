@@ -3,7 +3,7 @@ if filereadable($VIMRUNTIME . "/defaults.vim")
   source $VIMRUNTIME/defaults.vim
 endif
 
-"Always use dark background
+" Always use dark background
 set background=dark
 
 " Ignore case when search in lowercase
@@ -23,12 +23,19 @@ set whichwrap+=<,>,[,]
 " Disable incremental searching
 set noincsearch
 
-" VTune syntax settings
-autocmd BufRead,BufNewFile *.tmpl set filetype=cpp
-autocmd BufRead,BufNewFile *.parts set filetype=python
-set expandtab tabstop=4 shiftwidth=4 softtabstop=4
-autocmd Filetype c,cpp setlocal cindent cinoptions=:0,l1,t0,g0,(0,N-s
-autocmd Filetype c,cpp if search('\t') | setlocal noexpandtab tabstop=8 shiftwidth=8 softtabstop=0 | endif
+" Linux kernel style
+autocmd Filetype c,cpp setlocal cindent cinoptions=:0,l1,t0,g0,(0,j1,N-s
 
-"Go to the next buffer
+" Auto-disable tabs and enable indent=4 if no tabs
+autocmd Filetype * if search('\t')==0 | setlocal expandtab tabstop=4 shiftwidth=4 softtabstop=4 | endif
+
+" Disable errors on ({ })
+highlight link cErrInParen NONE
+highlight link cErrinBracket NONE
+
+" Showing trailing spaces
+highlight ExtraWhitespace ctermbg=red guibg=red
+match ExtraWhitespace /\s\+$/
+
+" Go to the next buffer
 map bn <esc>:bn<cr>
