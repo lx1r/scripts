@@ -1,9 +1,9 @@
 #!/bin/bash
 
 br=$(git status | sed -n "s/Your branch is up to date with '\(.*\)'./\1/p")
-#[ -z "$br" ] && echo "On detached branch" && exit
+[ -z "$br" ] && echo "On detached branch" && exit
 echo "Remote branch: $br"
-[ "$br" == "origin/master" ] && exit
+[ "$br" == "origin/master" ] && [ "$1" != "--force" ]  && echo "Try to use 'force' option" && exit
 
 git clean -fxd
 echo "Pushing:"
