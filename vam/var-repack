@@ -1,0 +1,104 @@
+#!/bin/bash -e
+
+IFS=$'\n'
+me=$(basename $0)
+
+vam_dir="/cygdrive/c/games/VaM"
+pkg_dir="$vam_dir/AddonPackages"
+person_custom_dir="Custom/Atom/Person/Appearance"
+build_dir=$(pwd)/build_dir
+pkg_ver=1
+
+[ $# -eq 0 ] && echo "$me preset-name [input-package]" && exit
+[ $# -ge 1 ] && preset_short=$1 && input_pkg_name=repack.$1.1.var
+[ $# -ge 2 ] && input_pkg_name=$2
+
+# setup preset list
+preset="$person_custom_dir/Preset_$preset_short"
+[ ! -f $vam_dir/$preset.vap ] && echo "$me: Preset $preset_short doesn't exist" && exit 1
+echo "Person preset: $preset"
+
+# setup input package tag and file list
+input_tag=$(basename $input_pkg_name .var)
+input_pkg=$(find $pkg_dir -name $input_pkg_name | head -n1)
+[ ! -f "$input_pkg" ] && echo "$me: Package $input_pkg_name doesn't exist" && exit 2
+echo "Input package: $input_pkg"
+
+# setup output package
+output_pkg_short=$1
+output_pkg=$pkg_dir/repack.$output_pkg_short.$pkg_ver.var
+echo "Output package: $output_pkg"
+
+# create temporary build dir
+cd $pkg_dir
+rm -rf $build_dir
+mkdir $build_dir && cd $build_dir
+
+# copy preset files
+mkdir -p $person_custom_dir
+echo "   Copying $preset..."
+cp $vam_dir/$preset.* $person_custom_dir
+
+# setup self content list
+sed -i "s/$input_tag/SELF/" "$preset.vap"
+content_list=$(sed -n "s/.* : \"SELF:\/\(.*\)\..*\".*/\1/p" "$preset.vap" | sort -f | uniq)
+[ -z "$content_list" ] && read -p "$me: Content list is empty, do you want to continue? [y/N] " && [ "$REPLY" != "y" ] && exit 3
+
+# copy self content list
+for file in $content_list
+do
+    echo "   Unpacking $file..."
+    unzip -q $input_pkg "$file.*"
+done
+
+# setup final self content list
+content_list=$(find . -type f -printf %P\\n)
+
+# show external deps
+dep_files=$(sed -n "s/.* : \"\(.*\):\/\(.*\)\/.*\".*/\1:\2/p" "$preset.vap" | grep -v SELF | sort -f | uniq)
+for file in $dep_files
+do
+    echo "   External dependency: $file"
+done
+
+# setup external package list
+dep_pkgs=$(sed -n "s/.* : \"\(.*\)\.[0-9]*:\/\(.*\)\".*/\1.latest/p" "$preset.vap" | grep -v SELF | sort -f | uniq)
+
+print_meta_json()
+{
+    echo "{"
+    echo "   \"licenseType\" : \"CC BY\","
+    echo "   \"creatorName\" : \"repack\","
+    echo "   \"packageName\" : \"$output_pkg_short\","
+
+    echo "   \"contentList\" : ["
+    comma=0
+    for file in $content_list
+    do
+        if [ $comma -eq 1 ]; then echo ","; else comma=1; fi
+        echo -n "      \"$file\""
+    done
+    [ $comma -eq 1 ] && echo
+    echo "   ],"
+
+    echo "   \"dependencies\" : {"
+    comma=0
+    for dep in $dep_pkgs
+    do
+        if [ $comma -eq 1 ]; then echo ","; else comma=1; fi
+        echo "      \"$dep\" : {"
+        echo -n "      }"
+    done
+    [ $comma -eq 1 ] && echo
+
+    echo "   }"
+    echo "}"
+}
+
+print_meta_json > meta.json
+
+echo "Packing $output_pkg..."
+find . -type f -exec chmod 664 {} +
+rm -f $output_pkg
+zip -q -r -1 $output_pkg *
+
