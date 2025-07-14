@@ -14,7 +14,7 @@ pr_msg()
 
 if [ ! -f $depfile ]
 then
-    echo "Preparing dependency cache.."
+    echo "Preparing dependency cache..."
     var_list=$(find . -name "*.var")
     for var_path in $var_list
     do

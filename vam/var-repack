@@ -66,6 +66,8 @@ dep_pkgs=$(sed -n "s/.* : \"\(.*\)\.[0-9]*:\/\(.*\)\".*/\1.latest/p" "$preset.va
 
 print_meta_json()
 {
+    local comma
+
     echo "{"
     echo "   \"licenseType\" : \"CC BY\","
     echo "   \"creatorName\" : \"repack\","
