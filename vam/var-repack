@@ -47,7 +47,7 @@ content_list=$(sed -n "s/.* : \"SELF:\/\(.*\)\..*\".*/\1/p" "$preset.vap" | sort
 # copy self content list
 for file in $content_list
 do
-    echo "   Unpacking $file..."
+    echo "   Unpacking $file.*"
     unzip -q $input_pkg "$file.*"
 done
 

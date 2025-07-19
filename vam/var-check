@@ -2,7 +2,7 @@
 
 IFS=$'\n'
 
-verbose=0
+verbose=1
 depfile=.deps.db
 depdirs=.deps*
 move=1
