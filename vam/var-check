@@ -4,48 +4,70 @@ IFS=$'\n'
 
 verbose=0
 depfile=.deps.db
+depdirs=.deps.*
+move=1
 vam_dir="/cygdrive/c/games/VaM/AddonPackages"
 cd $vam_dir
 
 pr_msg()
 {
-    [ $verbose -eq 1 ] && echo $*
+	[ $verbose -eq 1 ] && echo $*
+}
+
+pr_quiet()
+{
+	[ $verbose -eq 0 ] && echo $*
 }
 
 if [ ! -f $depfile ]
 then
-    echo "Preparing dependency cache..."
-    var_list=$(find . -name "*.var")
-    for var_path in $var_list
-    do
-        var=$(basename $var_path)
-        deps=$(unzip -p "$var_path" meta.json | sed -n "s/.*\"\(.*\)\.\(.*\)\.\(.*\)\".*:.*{/\1.\2.\3/p")
-        for dep in $deps
-        do
-            echo "$var:$dep" >> $depfile
-        done
-    done
+	echo "Preparing dependency cache..."
+	var_list=$(find . -name "*.var")
+	for var_path in $var_list
+	do
+		var=$(basename $var_path)
+		deps=$(unzip -p "$var_path" meta.json | sed -n "s/.*\"\(.*\)\.\(.*\)\.\(.*\)\".*:.*{/\1.\2.\3/p")
+		for dep in $deps
+		do
+			echo "$var:$dep" >> $depfile
+		done
+	done
 fi
 
-echo "Unused packages:"
-pkg_list=$(find . -name "*.var" | rev | cut -f 3- -d '.' | rev | sort -f | uniq)
+pr_quiet "Unused packages:"
+pkg_list=$(find $depdirs -name "*.var" | rev | cut -f 3- -d '.' | rev | sort -f | uniq)
 for pkg_path in $pkg_list
 do
-    used=0
-    pkg=$(basename $pkg_path)
+	#used=0
+	pkg=$(basename $pkg_path)
 	pr_msg "Package: $pkg"
-	vers=$(find . -name "$pkg.*.var" | rev | cut -f 2- -d '.' | rev)$'\n'$pkg.latest
-	for ver_path in $vers
+
+	pkg_tmpl="$(printf "%q" $pkg).*.var"
+	vers=($(find $depdirs -name "$pkg_tmpl" | rev | cut -f 2- -d '.' | rev))
+	#$'\n'$pkg.latest
+
+	#echo $pkg ::  vers=${vers[*]}
+	latest=${vers[-1]}  #$(echo -e $vers | tail -n1)
+	#echo latest = $latest
+	#echo pkg.latest = $pkg.latest
+
+	for ver_path in ${vers[*]}
 	do
-        ver=$(basename $ver_path)
-        pr_msg "   Version: $ver"
-        rels=$(grep -F ":$ver" $depfile)
-        [ -n "$rels" ] && used=1
-        [ -z "$rels" ] && pr_msg "      UNUSED"
-        for rel in $rels
-        do
-            pr_msg "      $rel" | cut -f 1 -d ":"
-        done
+		ver=$(basename $ver_path)
+		pr_msg "   Version: $ver"
+		users=$(grep -F ":$ver" $depfile)
+		# check pkg.latest
+		[ $ver_path == $latest ] && users="$(grep -F ":$pkg.latest" $depfile) $users"
+
+		if [ -z "$users" ]
+		then
+			pr_msg "      UNUSED"
+			pr_quiet "$ver_path"
+		fi
+		for user in $users
+		do
+			pr_msg "      $user" | cut -f 1 -d ":"
+		done
 	done
-	[ $used -eq 0 ] && echo "$pkg_path"
+	#[ $used -eq 0 ] && echo "$pkg_path"
 done
