@@ -2,9 +2,9 @@
 
 IFS=$'\n'
 
-verbose=0
+verbose=1
 depfile=.deps.db
-depdirs=.deps.*
+depdirs=.deps*
 move=1
 vam_dir="/cygdrive/c/games/VaM/AddonPackages"
 cd $vam_dir
@@ -32,42 +32,40 @@ then
 			echo "$var:$dep" >> $depfile
 		done
 	done
+else
+	echo "Using existing '$vam_dir/$depfile'"
 fi
 
-pr_quiet "Unused packages:"
+ [ $move -eq 1 ] && echo "All unused packages will be moved to '$vam_dir'"
+
+echo "Looking for unused packages..."
 pkg_list=$(find $depdirs -name "*.var" | rev | cut -f 3- -d '.' | rev | sort -f | uniq)
 for pkg_path in $pkg_list
 do
-	#used=0
 	pkg=$(basename $pkg_path)
-	pr_msg "Package: $pkg"
-
 	pkg_tmpl="$(printf "%q" $pkg).*.var"
 	vers=($(find $depdirs -name "$pkg_tmpl" | rev | cut -f 2- -d '.' | rev))
-	#$'\n'$pkg.latest
-
-	#echo $pkg ::  vers=${vers[*]}
-	latest=${vers[-1]}  #$(echo -e $vers | tail -n1)
-	#echo latest = $latest
-	#echo pkg.latest = $pkg.latest
+	latest=${vers[-1]}
 
 	for ver_path in ${vers[*]}
 	do
 		ver=$(basename $ver_path)
-		pr_msg "   Version: $ver"
-		users=$(grep -F ":$ver" $depfile)
-		# check pkg.latest
-		[ $ver_path == $latest ] && users="$(grep -F ":$pkg.latest" $depfile) $users"
+		pr_msg "$ver.var"
 
-		if [ -z "$users" ]
+		# check pkg.[0-9]
+		deps=$(grep -F ":$ver" $depfile)
+		# check pkg.latest
+		[ $ver_path == $latest ] && deps="$(grep -F ":$pkg.latest" $depfile)${deps:+ $deps}"
+
+		if [ -z "$deps" ]
 		then
-			pr_msg "      UNUSED"
+			pr_msg "  UNUSED"
 			pr_quiet "$ver_path"
+			[ $move -eq 0 ] && mv "$ver_path.var" "$vam_dir"
 		fi
-		for user in $users
+		for dep in $deps
 		do
-			pr_msg "      $user" | cut -f 1 -d ":"
+			pr_msg "  $dep" | cut -f 1 -d ":"
 		done
 	done
-	#[ $used -eq 0 ] && echo "$pkg_path"
 done
