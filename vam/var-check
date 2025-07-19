@@ -2,7 +2,7 @@
 
 IFS=$'\n'
 
-verbose=1
+verbose=0
 depfile=.deps.db
 depdirs=.deps*
 move=1
@@ -26,7 +26,7 @@ then
 	for var_path in $var_list
 	do
 		var=$(basename $var_path)
-		deps=$(unzip -p "$var_path" meta.json | sed -n "s/.*\"\(.*\)\.\(.*\)\.\(.*\)\".*:.*{/\1.\2.\3/p")
+		deps=$(unzip -p "$var_path" meta.json | sed -rn "s|.*\"(.*)\.(.*)\.(.*)\".*:.*\{.*|\1.\2.\3|p")
 		for dep in $deps
 		do
 			echo "$var:$dep" >> $depfile
@@ -50,18 +50,19 @@ do
 	for ver_path in ${vers[*]}
 	do
 		ver=$(basename $ver_path)
-		pr_msg "$ver.var"
+		pr_msg "$ver_path.var"
 
 		# check pkg.[0-9]
 		deps=$(grep -F ":$ver" $depfile)
 		# check pkg.latest
-		[ $ver_path == $latest ] && deps="$(grep -F ":$pkg.latest" $depfile)${deps:+ $deps}"
+		[ $ver_path == $latest ] && deps="${deps:+$deps }$(grep -F ":$pkg.latest" $depfile)"
+
 
 		if [ -z "$deps" ]
 		then
 			pr_msg "  UNUSED"
 			pr_quiet "$ver_path"
-			[ $move -eq 0 ] && mv "$ver_path.var" "$vam_dir"
+			[ $move -eq 1 ] && mv "$ver_path.var" "$vam_dir"
 		fi
 		for dep in $deps
 		do
