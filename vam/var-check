@@ -67,7 +67,7 @@ do
 			for dep in $deps
 			do
 				echo "  $dep" | cut -f 1 -d ":"
-			done
+			done | sort -f | uniq
 		fi
 	done
 done
