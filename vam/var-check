@@ -2,24 +2,24 @@
 
 IFS=$'\n'
 
-verbose=1
+# Usage var-check [-v] [-game game-addon-dir] [-clean] [-dep-subdir subdir ] [-move unused-dir]
+
+verbose=0
+vam_dir="/cygdrive/c/games/VaM/AddonPackages"
+rebuild_cache=0
 depfile=.deps.db
 depdirs=.deps*
 move=1
-vam_dir="/cygdrive/c/games/VaM/AddonPackages"
+move_dir=$vam_dir
+
 cd $vam_dir
 
 pr_msg()
 {
-	[ $verbose -eq 1 ] && echo $*
+	([ $verbose -eq 1 ] && echo "$1") || ([ -n "$2" ] && echo "$2")
 }
 
-pr_quiet()
-{
-	[ $verbose -eq 0 ] && echo $*
-}
-
-if [ ! -f $depfile ]
+if [ ! -f $depfile -o $rebuild_cache -eq 1 ]
 then
 	echo "Preparing dependency cache..."
 	var_list=$(find . -name "*.var")
@@ -36,7 +36,7 @@ else
 	echo "Using existing '$vam_dir/$depfile'"
 fi
 
- [ $move -eq 1 ] && echo "All unused packages will be moved to '$vam_dir'"
+[ $move -eq 1 ] && echo "All unused packages will be moved to '$vam_dir'"
 
 echo "Looking for unused packages..."
 pkg_list=$(find $depdirs -name "*.var" | rev | cut -f 3- -d '.' | rev | sort -f | uniq)
@@ -57,16 +57,17 @@ do
 		# check pkg.latest
 		[ $ver_path == $latest ] && deps="${deps:+$deps }$(grep -F ":$pkg.latest" $depfile)"
 
-
 		if [ -z "$deps" ]
 		then
-			pr_msg "  UNUSED"
-			pr_quiet "$ver_path"
-			[ $move -eq 1 ] && mv "$ver_path.var" "$vam_dir"
+			pr_msg "  UNUSED" "$ver_path"
+			[ $move -eq 1 ] && mv "$ver_path.var" "$move_dir"
 		fi
-		for dep in $deps
-		do
-			pr_msg "  $dep" | cut -f 1 -d ":"
-		done
+		if [ $verbose -eq 1 ]
+		then
+			for dep in $deps
+			do
+				echo "  $dep" | cut -f 1 -d ":"
+			done
+		fi
 	done
 done
