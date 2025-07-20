@@ -2,9 +2,9 @@
 
 IFS=$'\n'
 
-# Usage var-check [-v] [-game game-addon-dir] [-clean] [-dep-subdir subdir ] [-move unused-dir]
+# Usage var-check [-v] [-game game-addon-dir] [-clean] [-check-subdir subdir ] [-move unused-dir]
 
-verbose=0
+verbose=1
 vam_dir="/cygdrive/c/games/VaM/AddonPackages"
 rebuild_cache=0
 depfile=.deps.db
