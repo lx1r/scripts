@@ -1,0 +1,9 @@
+#!/bin/bash
+
+br=origin/master
+[ -n "$1" ] && br=$1
+echo Fetching $br
+git pull
+git submodule foreach git pull origin master
+echo Merging with $br
+git merge $br -m"Merge with branch '$br'" && git push
