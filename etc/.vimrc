@@ -37,5 +37,8 @@ highlight link cErrinBracket NONE
 highlight ExtraWhitespace ctermbg=red guibg=red
 match ExtraWhitespace /\s\+$/
 
+" Additional keywords
+autocmd Filetype c,cpp syntax keyword cRepeat foreach
+
 " Go to the next buffer
 map bn <esc>:bn<cr>
