@@ -1,0 +1,11 @@
+[user]
+    name = marvin
+    email = lx1r@github.com
+[alias]
+    br = branch
+    cl = clean -fxd
+    co = checkout
+    df = diff
+    lg = log --abbrev-commit --name-status
+    lp = log -p --abbrev-commit
+    st = status
